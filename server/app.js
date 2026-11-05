@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { randomBytes, randomUUID, timingSafeEqual, createHash } from 'node:crypto';
 import { z } from 'zod';
 import path from 'node:path';
+import { isValidAssessment, isValidFeeAmount } from '../shared/business.js';
 
 const str=z.string().trim().min(1).max(160);
 const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>!Number.isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v,'Invalid date');
@@ -13,8 +14,8 @@ const schemas={
  students:z.object({name:str,email:z.email(),roll:str,classId:str,phone:z.string().max(40).default(''),parentName:z.string().max(160).default(''),status:z.enum(['Active','Inactive']).default('Active')}),
  teachers:z.object({name:str,email:z.email(),department:str,phone:z.string().max(40).default('')}),
  classes:z.object({name:str,code:str,department:str,teacherId:str,room:str}),
- results:z.object({studentId:str,classId:str,subject:str,exam:str,term:str,marks:z.number().min(0).max(10000),total:z.number().positive().max(10000)}).refine(v=>v.marks<=v.total,'Marks exceed total'),
- fees:z.object({studentId:str,title:str,amount:z.number().positive().max(10000000),month:z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),dueDate:date}),
+ results:z.object({studentId:str,classId:str,subject:str,exam:str,term:str,marks:z.number().min(0).max(10000),total:z.number().positive().max(10000)}).refine(isValidAssessment,'Invalid assessment marks or total'),
+ fees:z.object({studentId:str,title:str,amount:z.number().positive().max(10000000).refine(isValidFeeAmount,'Use at most two decimal places'),month:z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),dueDate:date}),
  timetable:z.object({classId:str,teacherId:str,day:z.enum(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']),start:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),end:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),subject:str,room:str}).refine(v=>v.end>v.start,'End time must follow start time')
 };
 const fail=(status,message)=>{const e=new Error(message);e.status=status;throw e;};
@@ -29,6 +30,8 @@ export function visibleData(data,user){
 }
 export function createApp(store,{secure=process.env.COOKIE_SECURE==='true'}={}){
  const app=express(),sessions=new Map();app.disable('x-powered-by');
+ // Enable only for a deployment behind one trusted reverse proxy (Render).
+ if(process.env.TRUST_PROXY==='1')app.set('trust proxy',1);
  app.use(helmet({contentSecurityPolicy:{directives:{'script-src':["'self'"],'style-src':["'self'","'unsafe-inline'"],'img-src':["'self'",'data:']}}}));app.use(express.json({limit:'100kb'}));app.use(cookieParser());
  app.use('/api',(req,res,next)=>{res.set('Cache-Control','no-store');if(['POST','PUT','PATCH','DELETE'].includes(req.method)&&req.get('origin')&&req.get('origin')!==`${req.protocol}://${req.get('host')}`){const origin=new URL(req.get('origin'));if(!(process.env.NODE_ENV!=='production'&&['localhost','127.0.0.1'].includes(origin.hostname)&&['localhost','127.0.0.1'].includes(req.hostname)))return res.status(403).json({error:'Request origin rejected'});}next();});
  app.get('/api/health',(_,res)=>res.json({ok:true,storage:store.mode,demo:process.env.SEED_DEMO==='true'}));

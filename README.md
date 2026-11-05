@@ -27,7 +27,7 @@ Built with **React**, **Node.js**, **Express**, and a configurable **PostgreSQL*
 - **Backend:** Node.js, Express 5
 - **Storage:** PostgreSQL through `pg`, or a local JSON file for the demo
 - **Validation and security:** Zod, bcryptjs, Helmet, CSRF tokens, login rate limiting, and HttpOnly session cookies
-- **Testing:** Node.js test runner and API integration tests
+- **Testing:** Node.js test runner, business-rule unit tests, and API integration tests
 
 ## Quick start
 
@@ -151,15 +151,21 @@ Report cards and vouchers download as self-contained HTML files. Open a download
 | `npm run dev` | Run the API and Vite development server |
 | `npm run build` | Build frontend assets into `dist/` |
 | `npm start` | Start the API and serve the built frontend |
-| `npm test` | Run the backend integration tests |
+| `npm test` | Run all unit and API integration tests |
+| `npm run test:unit` | Run the 8 business-rule unit tests |
+| `npm run test:api` | Run the 13 API integration tests |
 
-The **11 backend integration tests passed on November 5, 2026**. They cover authentication, role-based visibility, CSRF protection, student CRUD, attendance updates, result validation, timetable conflicts, fee payment restrictions, linked accounts, local persistence, and logout.
+The **21 tests passed on November 6, 2026**: 8 unit tests cover grade thresholds, invalid marks, non-100 totals, fee precision, and paid/outstanding reconciliation; 13 API integration tests cover authentication, role visibility, CSRF, CRUD, attendance, results, timetables, payment restrictions, accounts, persistence, logout, decimal fee validation, and HTTPS proxy behavior. Shared business functions are used by the application itself.
 
 Tests use isolated temporary local data and do not modify the demo workspace. They do not validate a live PostgreSQL connection. In environments that restrict test subprocesses, run:
 
 ```sh
-node --test --test-isolation=none tests/api.test.js
+node --test --test-isolation=none tests/business.test.js tests/api.test.js
 ```
+
+## Live deployment
+
+Follow [DEPLOYMENT.md](DEPLOYMENT.md) to deploy the Express application and PostgreSQL database using the included Render Blueprint. A live URL has not been provisioned as part of this source update. The deployment guide includes a hosted verification checklist and free-plan limits.
 
 ## Project structure
 
@@ -175,7 +181,11 @@ University-Management-System/
 │   ├── store.js              # PostgreSQL and local persistence
 │   ├── seed.js               # Fictional demo data
 │   └── create-admin.js       # First administrator setup
-├── tests/api.test.js         # Backend integration tests
+├── shared/business.js       # Shared grade and fee rules
+├── tests/business.test.js    # Business-rule unit tests
+├── tests/api.test.js         # API integration tests
+├── render.yaml               # Render web service and PostgreSQL
+├── DEPLOYMENT.md             # Hosting and verification guide
 ├── .env.example              # Example configuration
 ├── compose.yaml              # Optional local PostgreSQL service
 ├── vite.config.js
@@ -193,6 +203,8 @@ University-Management-System/
 | Demo credentials are rejected | Check that `.env` enables demo seeding and that the selected store actually contains demo accounts |
 | Changes do not appear | Run `npm run build` after source changes and hard-refresh the browser |
 | Port 4000 is already in use | Stop the previous application instance before starting another |
+
+Production startup requires `DATABASE_URL`. For hosting, set `NODE_ENV=production`, `HOST=0.0.0.0`, and `COOKIE_SECURE=true`. The included Render configuration also sets `TRUST_PROXY=1` for its reverse proxy.
 
 ## Scope and limitations
 

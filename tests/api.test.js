@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp,rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { request as httpRequest } from 'node:http';
 import { createStore } from '../server/store.js';
 import { createApp } from '../server/app.js';
 let store,server,base,dir,admin,teacher,student,parent;
@@ -21,3 +22,27 @@ test('only admin can record a payment and paid vouchers are immutable',async()=>
 test('new parent accounts are linked and duplicate emails rejected',async()=>{const body={name:'Another Parent',email:'another.parent@example.com',password:'TestPassword123!',role:'parent',studentIds:['s2']};assert.equal((await request('/accounts',{method:'POST',session:admin,body:{...body,studentIds:['missing']}})).status,400);assert.equal((await request('/accounts',{method:'POST',session:admin,body})).status,201);assert.equal((await request('/accounts',{method:'POST',session:admin,body})).status,409);const r=await request('/auth/login',{method:'POST',body:{email:body.email,password:body.password}});const scoped=await request('/data',{session:{cookie:r.cookie,csrf:r.body.csrf}});assert.deepEqual(scoped.body.students.map(s=>s.id),['s2']);});
 test('local storage persists and serializes concurrent updates',async()=>{await Promise.all(Array.from({length:8},(_,i)=>store.update(data=>data.activity.push({id:'concurrent-'+i,message:'write '+i,date:new Date().toISOString(),actor:'Test'}))));const reopened=await createStore({file:path.join(dir,'data.json'),url:'',demo:false});assert.equal((await reopened.read()).activity.filter(a=>a.id.startsWith('concurrent-')).length,8);await reopened.close();});
 test('logout invalidates the session',async()=>{const session=await login('student');assert.equal((await request('/auth/logout',{method:'POST',session})).status,200);assert.equal((await request('/data',{session})).status,401);});
+
+test('fee API rejects fractional paisa and preserves a valid decimal amount',async()=>{
+ const fee={studentId:'s1',title:'Precision test',amount:1.005,month:'2026-11',dueDate:'2026-11-30'};
+ assert.equal((await request('/fees',{method:'POST',session:admin,body:fee})).status,400);
+ const created=await request('/fees',{method:'POST',session:admin,body:{...fee,amount:123.45}});
+ assert.equal(created.status,201);assert.equal(created.body.amount,123.45);
+ assert.equal((await request('/fees/'+created.body.id,{method:'DELETE',session:admin})).status,200);
+});
+
+test('HTTPS proxy permits same-origin login with secure cookies and rejects foreign origins',async()=>{
+ const previous=process.env.TRUST_PROXY;process.env.TRUST_PROXY='1';
+ let proxyApp;
+ try{proxyApp=createApp(store,{secure:true});}finally{if(previous===undefined)delete process.env.TRUST_PROXY;else process.env.TRUST_PROXY=previous;}
+ const proxy=proxyApp.listen(0,'127.0.0.1');await new Promise(r=>proxy.once('listening',r));
+ try{
+  const url=`http://127.0.0.1:${proxy.address().port}/api/auth/login`;
+  const headers={'Content-Type':'application/json',host:'campus.example','x-forwarded-proto':'https',origin:'https://campus.example'};
+  const body=JSON.stringify({email:'admin@campus.edu',password:'Campus123!'});
+  const send=customHeaders=>new Promise((resolve,reject)=>{const request=httpRequest(url,{method:'POST',headers:customHeaders},response=>{response.resume();response.on('end',()=>resolve({status:response.statusCode,cookie:response.headers['set-cookie']?.join(';')}));});request.on('error',reject);request.end(body);});
+  const result=await send(headers);assert.equal(result.status,200);
+  assert.match(result.cookie,/; Secure/);assert.match(result.cookie,/; HttpOnly/);
+  assert.equal((await send({...headers,origin:'https://other.example'})).status,403);
+ }finally{await new Promise(r=>proxy.close(r));}
+});

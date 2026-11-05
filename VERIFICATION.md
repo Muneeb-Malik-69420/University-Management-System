@@ -1,10 +1,9 @@
-# Verification — November 4, 2026
+# Verification — November 6, 2026
 
-- All 11 backend integration tests passed against isolated temporary storage.
-- Production JS/CSS/font assets compiled successfully with the esbuild CLI.
-- The Vite build wrapper could not run in the agent environment because child-process creation was restricted. The included dist was built directly with the same underlying esbuild compiler.
-- Browser verified: administrator login, student creation and search, report-card download with correct grades, responsive results layout, mobile navigation, and dashboard chart layout.
-- PostgreSQL adapter implemented, but not exercised against a live database. The running local PostgreSQL service was left untouched.
-- Dependency audit: zero reported vulnerabilities after installation.
-
-The demo is fictional. Database setup and first-administrator instructions are in README.md.
+- 21 tests passed: 8 business-rule unit tests, 13 API integration tests.
+- Command: `node --test --test-isolation=none tests/business.test.js tests/api.test.js`.
+- API tests use isolated temporary JSON data, never the user workspace database.
+- JavaScript syntax checks passed for the modified server files.
+- Updated React source bundled successfully using the installed esbuild executable.
+- Standard Vite build could not run in the agent environment because child-process creation was denied (`spawn EPERM`). The GitHub Actions workflow and Render build command run the standard build; those remote builds have not yet been run.
+- PostgreSQL connectivity, actual Render provisioning, and hosted browser flows have not been verified. Follow DEPLOYMENT.md before claiming a working live demo.
