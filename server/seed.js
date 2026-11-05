@@ -1,0 +1,17 @@
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'node:crypto';
+export async function seed() {
+  const hash = await bcrypt.hash('Campus123!', 12);
+  const teachers = [{id:'t1',name:'Dr. Sarah Ahmed',email:'sarah@campus.edu',department:'Computer Science',phone:'+92 300 1234567'},{id:'t2',name:'Prof. Omar Malik',email:'omar@campus.edu',department:'Mathematics',phone:'+92 301 2345678'},{id:'t3',name:'Dr. Ayesha Khan',email:'ayesha@campus.edu',department:'Business',phone:'+92 302 3456789'}];
+  const classes = [{id:'c1',name:'BS Computer Science · Semester 5',code:'CS-5A',department:'Computer Science',teacherId:'t1',room:'Block A · 204'},{id:'c2',name:'BS Mathematics · Semester 3',code:'MATH-3A',department:'Mathematics',teacherId:'t2',room:'Block B · 102'},{id:'c3',name:'BBA · Semester 1',code:'BBA-1A',department:'Business',teacherId:'t3',room:'Block C · 301'}];
+  const names=['Ali Hassan','Fatima Zahra','Hamza Ahmed','Ayesha Noor','Usman Tariq','Maryam Khan','Bilal Shah','Zainab Aslam','Hassan Raza','Hira Malik','Abdullah Saeed','Iqra Javed','Saad Qureshi','Maham Ali','Danish Akram','Eman Farooq','Ahmed Rauf','Noor Fatima'];
+  const students=names.map((name,i)=>({id:`s${i+1}`,name,roll:`UNI-2026-${String(i+1).padStart(3,'0')}`,email:`${name.toLowerCase().replaceAll(' ','.')}@student.campus.edu`,classId:`c${Math.floor(i/6)+1}`,phone:`+92 300 100${String(i).padStart(4,'0')}`,parentName:i===0?'Muhammad Hassan':`${name.split(' ')[1]} Family`,status:'Active'}));
+  const now=new Date(); const date=now.toISOString().slice(0,10); const month=date.slice(0,7);
+  const attendance=[];
+  for(let d=1;d<=12;d++){const day=new Date(now);day.setUTCDate(day.getUTCDate()-d);if([0,6].includes(day.getUTCDay()))continue;students.forEach((s,i)=>attendance.push({id:randomUUID(),studentId:s.id,classId:s.classId,date:day.toISOString().slice(0,10),status:(i+d)%13===0?'Absent':(i+d)%17===0?'Late':'Present'}));}
+  const results=students.flatMap((s,i)=>['Midterm','Assignment'].map((exam,j)=>({id:randomUUID(),studentId:s.id,classId:s.classId,subject:s.classId==='c1'?'Database Systems':s.classId==='c2'?'Linear Algebra':'Principles of Management',exam,term:'Fall 2026',marks:65+(i*7+j*3)%34,total:100})));
+  const fees=students.map((s,i)=>({id:`f${i+1}`,studentId:s.id,title:'Semester tuition',amount:45000,month,dueDate:`${month}-20`,status:i%4===0?'Unpaid':'Paid',paidAt:i%4===0?null:date,number:`VCH-2026-${String(i+1).padStart(4,'0')}`}));
+  const timetable=classes.flatMap((c,i)=>['Monday','Tuesday','Wednesday','Thursday','Friday'].map((day,j)=>({id:randomUUID(),classId:c.id,teacherId:c.teacherId,day,start:j%2?'11:00':'09:00',end:j%2?'12:30':'10:30',subject:i===0?['Database Systems','Software Engineering','Operating Systems','Database Systems','Computer Networks'][j]:i===1?'Linear Algebra':'Principles of Management',room:c.room})));
+  const users=[{id:'u1',name:'Alex Morgan',email:'admin@campus.edu',role:'admin'},{id:'u2',name:teachers[0].name,email:'teacher@campus.edu',role:'teacher',teacherId:'t1'},{id:'u3',name:students[0].name,email:'student@campus.edu',role:'student',studentId:'s1'},{id:'u4',name:'Muhammad Hassan',email:'parent@campus.edu',role:'parent',studentIds:['s1']}].map(u=>({...u,passwordHash:hash}));
+  return {users,teachers,classes,students,attendance,results,fees,timetable,activity:[{id:randomUUID(),message:'Fall semester workspace is ready',date:new Date().toISOString(),actor:'Campus'}]};
+}
