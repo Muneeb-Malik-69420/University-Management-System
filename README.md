@@ -1,109 +1,201 @@
 # Campus — University Management System
 
-A React application with an Express API, role-based permissions, and PostgreSQL support. Includes a persistent local demo so you can review the project without configuring a database.
+A university management portal for administrators, teachers, students, and parents. Campus brings student records, class management, attendance, assessments, timetables, and fee records into one role-based workspace.
 
-## Run locally
+Built with **React**, **Node.js**, **Express**, and a configurable **PostgreSQL** storage adapter. A persistent local demo is included for evaluation without database setup.
 
-Requires Node.js 22.12+ (Node 24 recommended).
+## Features
 
-```powershell
-cd E:\Projects\Uni-Management-System
+| Module | Functionality |
+| --- | --- |
+| Dashboard | Student and faculty counts, attendance overview, today's schedule, and summary export |
+| Student management | Add, edit, search, filter, export, and manage active/inactive students |
+| Teacher management | Faculty records, departments, contact information, and class assignments |
+| Class management | Class codes, departments, assigned teachers, rooms, and student counts |
+| Attendance | Daily registers, bulk marking, revisions, monthly summaries, and CSV reports |
+| Results | Assessment entry, marks validation, calculated grades, and student/term filters |
+| Report cards | Download individual HTML report cards; print or save as PDF through the browser |
+| Timetable | Weekly schedules with checks for overlapping classes, teachers, and rooms |
+| Fees | Generate vouchers, track unpaid balances, record payments, and export fee records |
+| Parent portal | View attendance, results, timetable, and fees for linked children |
+| User accounts | Create role-based accounts linked to teacher or student records |
+| Interface | Responsive layouts, system-based light/dark appearance, and keyboard focus states |
+
+## Technology stack
+
+- **Frontend:** React 19, Vite, CSS, Lucide icons
+- **Backend:** Node.js, Express 5
+- **Storage:** PostgreSQL through `pg`, or a local JSON file for the demo
+- **Validation and security:** Zod, bcryptjs, Helmet, CSRF tokens, login rate limiting, and HttpOnly session cookies
+- **Testing:** Node.js test runner and API integration tests
+
+## Quick start
+
+### Requirements
+
+- Node.js **22.12 or later**; Node.js 24 is recommended
+- npm
+- Git, if cloning the repository
+- PostgreSQL only when using PostgreSQL mode
+
+### 1. Clone and install
+
+```sh
+git clone https://github.com/Muneeb-Malik-69420/University-Management-System.git
+cd University-Management-System
 npm install
-Copy-Item .env.example .env
-npm run dev
 ```
 
-Open **http://127.0.0.1:5173**. The API runs at **http://127.0.0.1:4000**. `.env.example` opts in to sample records with `SEED_DEMO=true`. Copy it only when you want a demo workspace. Existing data is never overwritten by the seeder.
+### 2. Create the environment file
 
-Alternatively, a prebuilt `dist` folder is included in the packaged release:
+**Windows Command Prompt:**
+
+```cmd
+copy .env.example .env
+```
+
+**PowerShell:**
 
 ```powershell
+Copy-Item .env.example .env
+```
+
+**macOS / Linux:**
+
+```sh
+cp .env.example .env
+```
+
+The example configuration enables fictional demo records. Keep `DATABASE_URL` blank to try the local demo immediately.
+
+### 3. Build and start
+
+```sh
+npm run build
 npm start
 ```
 
-Open **http://127.0.0.1:4000**. To rebuild after changing the interface, run `npm run build`.
+Open **[http://127.0.0.1:4000](http://127.0.0.1:4000)**. Keep the server terminal open while using the application.
+
+For development with automatic reload:
+
+```sh
+npm run dev
+```
+
+Open **[http://127.0.0.1:5173](http://127.0.0.1:5173)**. Vite forwards API requests to the backend on port 4000.
 
 ## Demo accounts
 
-All four demo accounts use password **Campus123!**.
+All demo accounts use the password **`Campus123!`**. Select a demo role on the sign-in screen and enter the password.
 
-| Role | Email | Access |
+| Role | Email | Permissions |
 | --- | --- | --- |
-| Administrator | admin@campus.edu | All records, account creation, and fee payment recording |
-| Teacher | teacher@campus.edu | Assigned classes, their students, attendance, and result entry |
-| Student | student@campus.edu | Ali Hassan's attendance, results, timetable, and fees |
-| Parent | parent@campus.edu | Linked child Ali Hassan's attendance, results, timetable, and fees |
+| Administrator | `admin@campus.edu` | Manage campus records, create accounts, and record fee payments |
+| Teacher | `teacher@campus.edu` | View assigned classes and students; mark attendance and enter results |
+| Student | `student@campus.edu` | View the student's own academic records, timetable, and fees |
+| Parent | `parent@campus.edu` | View records for linked children |
 
-The example teacher is assigned to CS-5A. Account permissions are enforced on the server, independently of the interface.
+The demo teacher is assigned to **CS-5A**. The student and parent accounts are linked to **Ali Hassan**. Permissions are enforced by the API as well as the interface.
 
-## Included workflows
+## Environment variables
 
-- **Overview:** student and faculty counts, attendance chart, today's schedule, and CSV summary.
-- **Students and teachers:** create, search, filter, edit, export, and delete unlinked records. Referenced students can be marked inactive.
-- **Classes:** department, code, teacher assignment, room, and student counts.
-- **Attendance:** daily register; Present, Absent, Late, and Excused; bulk mark-present; save and revise; monthly summaries and CSV downloads. Future attendance and cross-class entries are rejected.
-- **Results:** enter and revise assessments, validate marks against totals, calculate grades, and filter by student and term.
-- **Report cards:** select a student on Results and download a self-contained HTML report card. Open it in a browser and use Print → Save as PDF for a PDF copy.
-- **Timetable:** weekly schedule; create, edit, and delete slots; reject overlapping class, teacher, or room bookings.
-- **Fees:** generate student vouchers, filter records, export CSV, and record verified payments. Paid vouchers cannot be deleted. Download vouchers as HTML and print or save as PDF.
-- **Accounts:** create admin, teacher, student, or parent accounts linked to existing records. Parents can be linked to multiple students.
-- **Security:** bcrypt password hashes, expiring HttpOnly session cookies, CSRF tokens, login throttling, security headers, validation, and HTML/CSV export escaping.
-- **Responsive UI:** desktop sidebar, mobile navigation, forms, success/error messages, loading states, and empty states. Fonts are bundled locally.
+| Variable | Example / default | Purpose |
+| --- | --- | --- |
+| `PORT` | `4000` | Backend port |
+| `DATABASE_URL` | Blank | PostgreSQL connection string; blank selects local JSON storage |
+| `SEED_DEMO` | `true` in `.env.example` | Seed fictional records when the selected store is empty |
+| `COOKIE_SECURE` | `false` | Set to `true` for cookies served over HTTPS |
 
-Fees are bookkeeping records. This application does not process bank or card payments or send email notifications.
+Do not commit `.env`, database passwords, or personal records.
 
-## Connect PostgreSQL
+## Storage modes
 
-Use a dedicated database rather than an existing application's database.
+### Local demo
 
-1. Create a database named `campus` and a user with access to that database.
-2. Set `DATABASE_URL` in `.env`:
+With `DATABASE_URL` blank, records persist in `data/campus.json`. This is the current default evaluation setup. It supports one application process and does **not** use PostgreSQL in this mode.
+
+Sample accounts are created only when the selected data store is initially empty and `SEED_DEMO=true`. Existing records are never overwritten by the seeder. If the server was started before `.env` was created, restarting alone will not add demo users to an already-created empty store. For a fresh local demo, stop the server and back up or rename the existing `data/campus.json` before restarting.
+
+### PostgreSQL
+
+Create a dedicated database and user with access to it. Set the following in `.env`, replacing the example credentials:
 
 ```dotenv
 DATABASE_URL=postgresql://campus:YOUR_URL_ENCODED_PASSWORD@localhost:5432/campus
 SEED_DEMO=true
 ```
 
-3. Restart the API. It creates its `campus_state` table and seeds it only when the table is empty and `SEED_DEMO=true`. The footer shows **PostgreSQL connected**.
+Restart the server. The application creates its `campus_state` table automatically. The health endpoint and application footer indicate which storage mode is connected.
 
-For a disposable Docker database, set `POSTGRES_PASSWORD` in `.env`, then run `docker compose up -d db`. Use the same password in `DATABASE_URL` (URL-encode reserved characters). Docker is optional.
+The PostgreSQL adapter stores application state in a JSONB row and uses transactions with row locking for atomic updates. It is a small-project storage design rather than a normalized relational schema. Switching storage modes selects a separate store; it does not migrate existing local data.
 
-PostgreSQL storage uses a single JSONB state row, with a transaction and `SELECT ... FOR UPDATE` for atomic writes. This keeps the starter's local and PostgreSQL data behavior consistent. It is suitable for this small project; a large deployment should normalize entities into relational tables, add indexes and migrations, and avoid loading all records per request. The local JSON mode is for a single application process. Local demo data is saved at `data/campus.json`; changing `DATABASE_URL` selects a separate data store and does not migrate existing local records.
+An optional `compose.yaml` is included for a local PostgreSQL container. Set `POSTGRES_PASSWORD` in `.env`, run `docker compose up -d db`, and use matching credentials in `DATABASE_URL`. URL-encode reserved characters in the connection password.
 
-## Empty workspace / real data
+## Suggested evaluation walkthrough
 
-Set `SEED_DEMO=false` **before the first start** against a fresh dedicated database or local data directory. Create the first administrator:
+1. Sign in as an administrator and explore the dashboard.
+2. Review teachers and classes, then add a student to an existing class.
+3. Open **Attendance**, select a class/date, mark all students, and save. Switch to **Monthly report** to export the summary.
+4. Open **Results**, enter an assessment, select a student, and download a report card.
+5. Open **Timetable** and create a non-overlapping class slot.
+6. Open **Fees & payments**, generate a voucher, download it, and record a verified payment.
+7. Sign in as the teacher, student, and parent to check their restricted views.
 
-```powershell
-$env:ADMIN_PASSWORD = 'Choose-a-strong-unique-password'
-node server/create-admin.js
-Remove-Item Env:ADMIN_PASSWORD
+Report cards and vouchers download as self-contained HTML files. Open a downloaded file in a browser and choose **Print → Save as PDF** for a PDF copy.
+
+## Scripts and tests
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Run the API and Vite development server |
+| `npm run build` | Build frontend assets into `dist/` |
+| `npm start` | Start the API and serve the built frontend |
+| `npm test` | Run the backend integration tests |
+
+The **11 backend integration tests passed on November 5, 2026**. They cover authentication, role-based visibility, CSRF protection, student CRUD, attendance updates, result validation, timetable conflicts, fee payment restrictions, linked accounts, local persistence, and logout.
+
+Tests use isolated temporary local data and do not modify the demo workspace. They do not validate a live PostgreSQL connection. In environments that restrict test subprocesses, run:
+
+```sh
+node --test --test-isolation=none tests/api.test.js
 ```
 
-The script asks for name and email. It does not echo the password. Then create teachers → classes → students → linked accounts using the interface.
-
-## Verification
-
-```powershell
-npm test
-npm run build
-```
-
-The integration suite checks authentication, CSRF, all role scopes, student CRUD, references, duplicate records, attendance transactions, grading validation, timetable collisions, payment restrictions, account links, persistence, and logout. Tests create temporary local storage and never change the demo or an external database. A live PostgreSQL connection is not required by the test suite.
-
-## Structure
+## Project structure
 
 ```text
-src/main.jsx        React screens, forms, reports, exports
-src/styles.css      Responsive design
-server/app.js       Express API, validation, authorization
-server/store.js     PostgreSQL / atomic local JSON persistence
-server/seed.js      Fictional demo records and accounts
-server/index.js     Local server entry point
-server/create-admin.js  First administrator setup
-tests/api.test.js   Backend integration tests
+University-Management-System/
+├── src/
+│   ├── main.jsx              # React screens, forms, reports, and exports
+│   ├── styles.css            # Base interface styles
+│   └── redesign.css          # Updated visual design and responsive themes
+├── server/
+│   ├── index.js              # Server entry point
+│   ├── app.js                # API routes, permissions, and validation
+│   ├── store.js              # PostgreSQL and local persistence
+│   ├── seed.js               # Fictional demo data
+│   └── create-admin.js       # First administrator setup
+├── tests/api.test.js         # Backend integration tests
+├── .env.example              # Example configuration
+├── compose.yaml              # Optional local PostgreSQL service
+├── vite.config.js
+└── package.json
 ```
 
-## Deployment notes
+`dist/` is generated by `npm run build`. `node_modules/`, `.env`, and `data/` are excluded from version control.
 
-This is a complete local project starter, not a hardened multi-tenant service. Sessions and rate limiting are in memory, so sessions end when the server restarts; multiple server instances need a shared session and limiter store. Set `NODE_ENV=production`, use HTTPS with `COOKIE_SECURE=true`, configure a trusted reverse proxy and origin policy for your deployment, and store database credentials in environment secrets. The API binds to loopback by default. Add backups, account recovery, password changes, audit retention, pagination, and monitoring before using real campus records at scale. Demo accounts should never be seeded in a real deployment.
+## Troubleshooting
+
+| Problem | Resolution |
+| --- | --- |
+| `Copy-Item` is not recognized | In Command Prompt, use `copy .env.example .env` |
+| Sign-in shows “Failed to fetch” | Start the server with `npm start`, keep its terminal open, and reload the page |
+| Demo credentials are rejected | Check that `.env` enables demo seeding and that the selected store actually contains demo accounts |
+| Changes do not appear | Run `npm run build` after source changes and hard-refresh the browser |
+| Port 4000 is already in use | Stop the previous application instance before starting another |
+
+## Scope and limitations
+
+This project is intended for coursework and demonstration. Fees are bookkeeping records; there is no bank/card payment gateway. Sessions and login rate limits are held in memory, so signing in again is required after a server restart. Password recovery, email notifications, shared multi-instance sessions, and large-scale database optimization are outside the current scope.
+
+Use fictional records for evaluation. A deployment with real campus data would require HTTPS, secure environment configuration, backups, and additional operational hardening.
